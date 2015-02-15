@@ -1,21 +1,36 @@
 //client only code
 Template.leaderboard.created = function(){
-  var data = [4, 8, 15, 16, 23, 42];
-  var x = d3.scale.linear()
-    .domain([0, d3.max(data)])
-    .range([0, 420]);
-  _.defer(function(){
-    d3.select(".chart")
-      .selectAll("div")
-      .data(data)
-      .enter().append("div")
-      .style("width", function(d) { return x(d) + "px"; })
-      .text(function(d) { return d; });
-  });
-  
-
+  _.defer(function () {
     
-  }
+  var x = d3.scale.linear()
+            .domain([0, 10])
+            .range([0, 70]);
+  Tracker.autorun(function () {
+        if (Tracker.currentComputation.firstRun) {
+          window.d3vis = {};
+          window.d3vis.color = d3.scale.category10();
+        }
+        
+        var players = Players.find({}).fetch();
+        var data = _.map(players,function(e){
+          e.value=e.score;
+          return e;
+        });
+
+        window.d3vis.color.domain(players.map(function(d) { return d.name}));
+
+        
+        d3.select(".chart").selectAll("div").data(data)
+          .enter().append("div");
+           
+        d3.select(".chart").selectAll("div").data(data)
+           .style("width", function(d) { return x(d.score) + "px"; })
+           .style("background-color", function(d) { return window.d3vis.color(d.name);})
+          .text(function(d) { return d.name + ": "+d.score; });
+    });  
+  });
+      
+}
 
 Template.leaderboard.helpers({
   players: function () {
@@ -30,6 +45,9 @@ Template.leaderboard.helpers({
 Template.leaderboard.events({
   'click .inc': function () {
     Players.update(Session.get("selectedPlayer"), {$inc: {score: 5}});
+  },
+  'click .dec': function () {
+    Players.update(Session.get("selectedPlayer"), {$inc: {score: -3}});
   }
 });
 
